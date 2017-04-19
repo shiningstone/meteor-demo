@@ -10,7 +10,7 @@ import TableSample from '../imports/ui/TableSample.jsx';
 
 Meteor.startup(() => {
   render(<TableSample />, document.getElementById('render-table'));
-  render(<ProjectView />, document.getElementById('render-project'));
-  render(<CountView />, document.getElementById('render-count'));
+  //render(<ProjectView />, document.getElementById('render-project'));
+  //render(<CountView />, document.getElementById('render-count'));
   render(<App />, document.getElementById('render-target'));
 });
