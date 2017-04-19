@@ -8,3 +8,7 @@ add react-bootstrap
 	
 add redux
 	meteor npm install --save redux
+	
+add alaning:roles
+	meteor add alanning:roles
+	需使用meteor mongo删除原有的users，让server创建默认user（user1/user2/user3）
