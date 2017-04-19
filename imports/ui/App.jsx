@@ -2,6 +2,7 @@ import React, { Component, PropTypes } from 'react';
 import ReactDOM from 'react-dom';
 import { Meteor } from 'meteor/meteor';
 import { createContainer } from 'meteor/react-meteor-data';
+import Button from 'react-bootstrap/lib/Button';
 
 import { Tasks } from '../api/tasks.js';
 
@@ -60,7 +61,7 @@ class App extends Component {
       <div className="container">
         <header>
           <h1>Todo List ({this.props.incompleteCount})</h1>
-
+		  <Button>count view + {this.props.incompleteCount}</Button>
           <label className="hide-completed">
             <input
               type="checkbox"
