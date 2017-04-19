@@ -9,6 +9,8 @@ import { Tasks } from '../api/tasks.js';
 import Task from './Task.jsx';
 import AccountsUIWrapper from './AccountsUIWrapper.jsx';
 
+import { jbStore } from './Store.jsx';
+
 // App component - represents the whole app
 class App extends Component {
   constructor(props) {
@@ -26,6 +28,7 @@ class App extends Component {
     const text = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
 
     Meteor.call('tasks.insert', text);
+	jbStore.dispatch({type: 'ADD',payload: 1});
 
     // Clear form
     ReactDOM.findDOMNode(this.refs.textInput).value = '';
@@ -57,11 +60,14 @@ class App extends Component {
   }
 
   render() {
+    var count = jbStore.getState();
+	console.log('App render : count is ' + count);
+	
     return (
       <div className="container">
         <header>
           <h1>Todo List ({this.props.incompleteCount})</h1>
-		  <Button>count view + {this.props.incompleteCount}</Button>
+		  <Button>count view + {count}</Button>
           <label className="hide-completed">
             <input
               type="checkbox"
