@@ -4,47 +4,26 @@ import { Meteor } from 'meteor/meteor';
 import { Random } from 'meteor/random';
 import { assert } from 'meteor/practicalmeteor:chai';
 
-import { permissionCtrl } from './permissionCtrl.js';
+import { ServerFailureCode, Permit } from './permissionCtrl.js';
 
-const ServerFailureCode = {
-	Ok : 0,
-	Unauthorized : 1,
-	InvalidParam : 2,
-};
 
 if (Meteor.isServer) {
+	/*********************************** 
+		stubs for test (interface sample)
+	***********************************/
 	var TesterInputParams = {};
+	function SysAdminOp() {
+		return ServerFailureCode.Ok;
+	}
+	function AdminOp(prj) {
+		IntfInputParams = prj;
+		return ServerFailureCode.Ok;
+	}
 	Meteor.methods({
-		'Tester.SysAdminOp'() {
-			if(Roles.userIsInRole(Meteor.userId(), ['sysAdmin']))
-			{
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		},
-		
-		'Tester.AdminOp'(prj) {
-			if(Roles.userIsInRole(Meteor.userId(), ['admin']))
-			{
-				TesterInputParams = prj;
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		},
-		
-		'Tester.DevOp'(prj, station) {
-		
-		},
-		
-		'Tester.TestOp'(prj, station) {
-		
-		},
+		'Intf.SysAdminOp' : Permit(['sysAdmin'], SysAdminOp),
+		'Intf.AdminOp' : Permit(['admin'], AdminOp),
+		'Intf.DevOp'(prj, station) {},
+		'Intf.TestOp'(prj, station) {},
 	});
 	
 	function fakeLogin(userId) {
@@ -53,6 +32,9 @@ if (Meteor.isServer) {
 		};
 	}
 	
+	/*********************************** 
+		test cases
+	***********************************/
 	describe('PermissionCtrl', () => {
 		var roles = ['sysAdmin','admin','dev', 'test']
 		
@@ -74,18 +56,17 @@ if (Meteor.isServer) {
 				}
 				fakeLogin(users.sysAdmin)
 			});
-
 			it('non-sysAdmin is not authorized to SysAdminOp', () => {
-				assert.equal(Meteor.call('Tester.SysAdminOp'), false);
+				assert.equal(Meteor.call('Intf.SysAdminOp'), ServerFailureCode.Unauthorized);
 			});
 			it('sysAdmin is authorized to SysAdminOp', () => {
 				Roles.addUsersToRoles(users.sysAdmin, ['sysAdmin'])
-				assert.equal(Meteor.call('Tester.SysAdminOp'), true);
+				assert.equal(Meteor.call('Intf.SysAdminOp'), ServerFailureCode.Ok);
 			});
 			it('sysAdmin is unauthorized to SysAdminOp', () => {
 				Roles.addUsersToRoles(users.sysAdmin, ['sysAdmin'])
 				Roles.removeUsersFromRoles(users.sysAdmin, ['sysAdmin'])
-				assert.equal(Meteor.call('Tester.SysAdminOp'), false);
+				assert.equal(Meteor.call('Intf.SysAdminOp'), ServerFailureCode.Unauthorized);
 			});
 		});
 		describe('Administrator', () => {
@@ -102,23 +83,22 @@ if (Meteor.isServer) {
 				}
 				fakeLogin(users.admin)
 			});
-
 			it('non-admin is not authorized to AdminOp', () => {
-				assert.equal(Meteor.call('Tester.AdminOp'), false);
+				assert.equal(Meteor.call('Intf.AdminOp'), ServerFailureCode.Unauthorized);
 			});
 			it('admin is authorized to AdminOp', () => {
 				Roles.addUsersToRoles(users.admin, ['admin'])
 				
 				var prj = {name: 'project'};
-				assert.equal(Meteor.call('Tester.AdminOp', prj), true);
-				assert.deepEqual(TesterInputParams, prj);
+				assert.equal(Meteor.call('Intf.AdminOp', prj), ServerFailureCode.Ok);
+				assert.deepEqual(IntfInputParams, prj);
 			});
 			it('admin is unauthorized to AdminOp', () => {
 				Roles.addUsersToRoles(users.admin, ['admin'])
 				Roles.removeUsersFromRoles(users.admin, ['admin'])
 				
 				var prj = {name: 'project'};
-				assert.equal(Meteor.call('Tester.AdminOp', prj), false);
+				assert.equal(Meteor.call('Intf.AdminOp', prj), ServerFailureCode.Unauthorized);
 			});
 		});
 	});
