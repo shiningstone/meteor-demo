@@ -20,8 +20,8 @@ if (Meteor.isServer) {
 		return ServerFailureCode.Ok;
 	}
 	Meteor.methods({
-		'Intf.SysAdminOp' : Permit(['sysAdmin'], SysAdminOp),
-		'Intf.AdminOp' : Permit(['admin'], AdminOp),
+		'Intf.SysAdminOp' : Permit(SysAdminOp,['sysAdmin']),
+		'Intf.AdminOp' : Permit(AdminOp,['admin']),
 		'Intf.DevOp'(prj, station) {},
 		'Intf.TestOp'(prj, station) {},
 	});

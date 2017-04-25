@@ -5,14 +5,15 @@ export const ServerFailureCode = {
 	InvalidParam : 2,
 };
 
-export function Permit(role, method) {
+export function Permit(method, role, groupCheckFlag) {
 	return function(x) {
-		if(Roles.userIsInRole(Meteor.userId(), role))
-		{
+		if(groupCheckFlag && Roles.userIsInRole(Meteor.userId(), role, x.project)) {
 			return method(x);
 		}
-		else
-		{
+		else if(!groupCheckFlag && Roles.userIsInRole(Meteor.userId(), role)) {
+			return method(x);
+		}
+		else {
 			return ServerFailureCode.Unauthorized;
 		}
 	}
