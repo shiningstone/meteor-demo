@@ -1,9 +1,5 @@
 
-export const ServerFailureCode = {
-	Ok : 0,
-	Unauthorized : 1,
-	InvalidParam : 2,
-};
+import { ServerFailureCode} from './interfaces.js'
 
 export function Permit(method, role, groupCheckFlag) {
 	return function(x) {
