@@ -4,6 +4,8 @@ import { Meteor } from 'meteor/meteor';
 import { Random } from 'meteor/random';
 import { assert } from 'meteor/practicalmeteor:chai';
 
+import { Projects } from './../imports/api/projects.js';
+
 import { ServerFailureCode, Permit } from './permissionCtrl.js';
 
 
@@ -12,7 +14,18 @@ if (Meteor.isServer) {
 		stubs for test (interface sample)
 	***********************************/
 	var TesterInputParams = {};
-	function SysAdminOp() {
+	function AddUser(args) {
+		var user = args[0];
+		var roles = args[1];
+		var groups = args[2];
+
+		if(arguments.length==2) {
+			Roles.addUsersToRoles(user, roles);
+		}
+		else {
+			Roles.addUsersToRoles(user, roles, groups);
+		}
+
 		return ServerFailureCode.Ok;
 	}
 	function AdminOp(prj) {
@@ -20,7 +33,7 @@ if (Meteor.isServer) {
 		return ServerFailureCode.Ok;
 	}
 	Meteor.methods({
-		'Intf.SysAdminOp' : Permit(SysAdminOp,['sysAdmin']),
+		'Intf.AddUser' : Permit(AddUser,['sysAdmin']),
 		'Intf.AdminOp' : Permit(AdminOp,['admin']),
 		'Intf.DevOp'(prj, station) {},
 		'Intf.TestOp'(prj, station) {},
@@ -53,20 +66,29 @@ if (Meteor.isServer) {
 				
 				users = {
 					'sysAdmin': addUser('sysAdmin'),
+					'admin' : addUser('admin'),
 				}
-				fakeLogin(users.sysAdmin)
 			});
-			it('non-sysAdmin is not authorized to SysAdminOp', () => {
-				assert.equal(Meteor.call('Intf.SysAdminOp'), ServerFailureCode.Unauthorized);
+
+
+			it('non-sysAdmin is not authorized to AddUser', () => {
+				var newuser = [users.admin, ['admin']];
+				assert.equal(Meteor.call('Intf.AddUser', newuser), ServerFailureCode.Unauthorized);
 			});
-			it('sysAdmin is authorized to SysAdminOp', () => {
+			it('sysAdmin is authorized to AddUser', () => {
 				Roles.addUsersToRoles(users.sysAdmin, ['sysAdmin'])
-				assert.equal(Meteor.call('Intf.SysAdminOp'), ServerFailureCode.Ok);
+				fakeLogin(users.sysAdmin)
+
+				var newuser = [users.admin, ['admin']];
+				assert.equal(Meteor.call('Intf.AddUser', newuser), ServerFailureCode.Ok);
 			});
-			it('sysAdmin is unauthorized to SysAdminOp', () => {
+			it('sysAdmin is unauthorized to AddUser', () => {
 				Roles.addUsersToRoles(users.sysAdmin, ['sysAdmin'])
 				Roles.removeUsersFromRoles(users.sysAdmin, ['sysAdmin'])
-				assert.equal(Meteor.call('Intf.SysAdminOp'), ServerFailureCode.Unauthorized);
+				fakeLogin(users.sysAdmin)
+
+				var newuser = [users.admin, ['admin']];
+				assert.equal(Meteor.call('Intf.AddUser', newuser), ServerFailureCode.Unauthorized);
 			});
 		});
 		describe('Administrator', () => {
