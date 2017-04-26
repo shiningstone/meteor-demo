@@ -50,12 +50,20 @@ Roles.IsPrior = function(cur, expect) {
 function AddUser(args) {
 	var curRoles = Roles.getRolesForUser(Meteor.userId());
 
-	console.log(curRoles);
-	console.log(args.roles);
-
 	if(Roles.IsPrior(curRoles, args.roles))
 	{
-		Roles.addUsersToRoles(args.user, args.roles, args.groups);
+		if(!Roles.IsPrior(curRoles, [ServerRole.SysAdmin])) {
+			if(args.groups) {
+				Roles.addUsersToRoles(args.user, args.roles, args.groups);
+			}
+			else {
+				return ServerFailureCode.InvalidParam;
+			}
+		}
+		else {
+			Roles.addUsersToRoles(args.user, args.roles, args.groups);
+		}
+
 		return ServerFailureCode.Ok;
 	}
 	else
