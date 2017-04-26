@@ -31,16 +31,17 @@ if (Meteor.isServer) {
 
 		return ServerFailureCode.Ok;
 	}
-	function AdminOp(prj) {
-		IntfInputParams = prj;
+	function AddProject(args) {
+		var prj = args[0];
+
+		Projects.insert({name : prj.name});
+		
 		return ServerFailureCode.Ok;
 	}
+
 	Meteor.methods({
 		'Intf.AddUser' : Permit(AddUser,['sysAdmin']),
-
-		'Intf.AdminOp' : Permit(AdminOp,['admin']),
-		'Intf.DevOp'(prj, station) {},
-		'Intf.TestOp'(prj, station) {},
+		'Intf.AddProject' : Permit(AddProject,['admin']),
 	});
 	
 	function fakeLogin(userId) {
@@ -54,41 +55,50 @@ if (Meteor.isServer) {
 	***********************************/
 	describe('PermissionCtrl', () => {
 		var roles = ['sysAdmin','admin','dev', 'test'];
-		
+
 		function createUser (name) {
 			return Accounts.createUser({'username': name});
 		}
-	
+			
 		describe('Administrator', () => {
 			beforeEach(() => {
 				Meteor.roles.remove({});
 				Meteor.users.remove({});
+				Projects.remove({});
 				
 				roles.map(function(role) {
 					Roles.createRole(role);
 				});
 				
 				users = {
+					'sysAdmin' : createUser('sysAdmin'),
 					'admin': createUser('admin'),
 				};
+
+				Roles.addUsersToRoles(users.sysAdmin, ['sysAdmin']);
+				Roles.addUsersToRoles(users.admin, ['admin']);
 				fakeLogin(users.admin);
 			});
-			it('non-admin is not authorized to AdminOp', () => {
-				assert.equal(Meteor.call('Intf.AdminOp'), ServerFailureCode.Unauthorized);
+			it('non-admin is not authorized to AddProject', () => {
+				var otherUser = createUser('otherUser');
+				fakeLogin(otherUser);
+
+				var prj = [{name: 'project'}];
+				assert.equal(Meteor.call('Intf.AddProject', prj), ServerFailureCode.Unauthorized);
 			});
-			it('admin is authorized to AdminOp', () => {
-				Roles.addUsersToRoles(users.admin, ['admin']);
-				
-				var prj = {name: 'project'};
-				assert.equal(Meteor.call('Intf.AdminOp', prj), ServerFailureCode.Ok);
-				assert.deepEqual(IntfInputParams, prj);
+			it('admin is authorized to AddProject', () => {
+				var prj = [{name: 'project'}];
+				assert.equal(Meteor.call('Intf.AddProject', prj), ServerFailureCode.Ok);
+
+				var results = Projects.find({}).fetch();
+				assert.equal(1, results.length);
+				assert.equal('project', results[0].name);
 			});
-			it('admin is unauthorized to AdminOp', () => {
-				Roles.addUsersToRoles(users.admin, ['admin']);
+			it('admin is unauthorized to AddProject', () => {
 				Roles.removeUsersFromRoles(users.admin, ['admin']);
 				
-				var prj = {name: 'project'};
-				assert.equal(Meteor.call('Intf.AdminOp', prj), ServerFailureCode.Unauthorized);
+				var prj = [{name: 'project'}];
+				assert.equal(Meteor.call('Intf.AddProject', prj), ServerFailureCode.Unauthorized);
 			});
 		});
 
