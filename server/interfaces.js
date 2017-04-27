@@ -59,20 +59,20 @@ function AssignUserToAdmin(args) {
 
 function AssginUser(args) {
 	if(args.groups) {
-		if(Roles.userIsInRole(Meteor.userId(), [ServerRole.SysAdmin], ServerRole.SysGroup)) {
+		if(Roles.userIsInRole(Meteor.userId(), [ServerRole.Admin], args.groups)) {
+			var curRoles = Roles.getRolesForUser(Meteor.userId(), ServerRole.SysGroup);
+
+			if(ServerRole.isPrior(curRoles, args.roles)) {
+				Roles.addUsersToRoles(args.user, args.roles, args.groups);
+				return ServerFailureCode.Ok;
+			}
+			else {
+				return ServerFailureCode.ImcompetentAuth;
+			}
+		}
+		else if(Roles.userIsInRole(Meteor.userId(), [ServerRole.SysAdmin], ServerRole.SysGroup)) {
 			Roles.addUsersToRoles(args.user, args.roles, args.groups);
 			return ServerFailureCode.Ok;
-		}
-		else if(Roles.userIsInRole(Meteor.userId(), [ServerRole.Admin], args.groups)) {
-				var curRoles = Roles.getRolesForUser(Meteor.userId(), ServerRole.SysGroup);
-
-				if(ServerRole.isPrior(curRoles, args.roles)) {
-					Roles.addUsersToRoles(args.user, args.roles, args.groups);
-					return ServerFailureCode.Ok;
-				}
-				else {
-					return ServerFailureCode.ImcompetentAuth;
-				}
 		}
 		else {
 			return ServerFailureCode.Unauthorized;
@@ -125,11 +125,11 @@ function Permit(method, role) {
 
 Meteor.methods({
 	/* system management */
-	'Intf.AssignUserToAdmin' : Permit(AssignUserToAdmin, [ServerRole.SysAdmin]),
-	'Intf.AddProject' : Permit(AddProject, [ServerRole.SysAdmin, ServerRole.Admin]),
-	'Intf.RemoveProject' : Permit(RemoveProject, [ServerRole.SysAdmin, ServerRole.Admin]),
+	'Sys.AssignUserToAdmin' : Permit(AssignUserToAdmin, [ServerRole.SysAdmin]),
+	'Sys.AddProject' : Permit(AddProject, [ServerRole.SysAdmin, ServerRole.Admin]),
+	'Sys.RemoveProject' : Permit(RemoveProject, [ServerRole.SysAdmin, ServerRole.Admin]),
 	/* projects management */
-	'Project.AssignUser' : Permit(AssginUser, [ServerRole.SysAdmin, ServerRole.Admin]),
-	'Project.AddTestplan' : Permit(AddTestplan, [ServerRole.SysAdmin, ServerRole.Admin, ServerRole.Maintener]),
+	'Prj.AssignUser' : Permit(AssginUser, [ServerRole.SysAdmin, ServerRole.Admin]),
+	'Prj.AddTestplan' : Permit(AddTestplan, [ServerRole.SysAdmin, ServerRole.Admin, ServerRole.Maintener]),
 });
 
