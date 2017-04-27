@@ -8,20 +8,20 @@ import { Projects } from './../imports/api/projects.js';
 describe('Database access', () => {
 	describe('Meteor tests', () => {
 		it('Meteor..methods doesn\'t support assigned dynamically', ()=>{
-			Meteor.methods({
-				'Sys.Test' : function() { return true; },
-			});
-			assert.equal(Meteor.call('Sys.Test'), true);
+			// Meteor.methods({
+			// 	'Sys.Test' : function() { return true; },
+			// });
+			// assert.equal(Meteor.call('Sys.Test'), true);
 			
-			try {
-				//Meteor.methods({
-				//	'Sys.Test' : function() { return false; },
-				//});
-			}
-			catch(ex)
-			{
-				assert.equal(Meteor.call('Sys.Test'), true);
-			}
+			// try {
+			// 	Meteor.methods({
+			// 		'Sys.Test' : function() { return false; },
+			// 	});
+			// }
+			// catch(ex)
+			// {
+			// 	assert.equal(Meteor.call('Sys.Test'), true);
+			// }
 		});
 	});
 	describe('Projects access', () => {

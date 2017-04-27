@@ -52,6 +52,10 @@ ServerRole.isPrior = function(cur, expect) {
 	return (ServerRole.compare(ServerRole.low(cur), ServerRole.high(expect))==-1);
 };
 
+ServerRole.expand = function(roles) {
+	
+};
+
 function AssignUserToAdmin(args) {
 	Roles.addUsersToRoles(args.user, [ServerRole.Admin], ServerRole.SysGroup);
 	return ServerFailureCode.Ok;
