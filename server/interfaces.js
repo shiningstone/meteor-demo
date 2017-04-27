@@ -4,6 +4,7 @@ import { assert } from 'meteor/practicalmeteor:chai';
 
 import { Projects } from './../imports/api/projects.js';
 import { Testplans } from './../imports/api/testplans.js';
+import { Permission, RequireParam, RequireUser } from './permission.js';
 
 export const ServerFailureCode = {
 	Ok : 0,
@@ -53,7 +54,7 @@ ServerRole.isPrior = function(cur, expect) {
 };
 
 ServerRole.expand = function(roles) {
-	
+
 };
 
 function AssignUserToAdmin(args) {
@@ -62,28 +63,23 @@ function AssignUserToAdmin(args) {
 }
 
 function AssginUser(args) {
-	if(args.groups) {
-		if(Roles.userIsInRole(Meteor.userId(), [ServerRole.Admin], args.groups)) {
-			var curRoles = Roles.getRolesForUser(Meteor.userId(), ServerRole.SysGroup);
+	if(Roles.userIsInRole(Meteor.userId(), [ServerRole.Admin], args.groups)) {
+		var curRoles = Roles.getRolesForUser(Meteor.userId(), ServerRole.SysGroup);
 
-			if(ServerRole.isPrior(curRoles, args.roles)) {
-				Roles.addUsersToRoles(args.user, args.roles, args.groups);
-				return ServerFailureCode.Ok;
-			}
-			else {
-				return ServerFailureCode.ImcompetentAuth;
-			}
-		}
-		else if(Roles.userIsInRole(Meteor.userId(), [ServerRole.SysAdmin], ServerRole.SysGroup)) {
+		if(ServerRole.isPrior(curRoles, args.roles)) {
 			Roles.addUsersToRoles(args.user, args.roles, args.groups);
 			return ServerFailureCode.Ok;
 		}
 		else {
-			return ServerFailureCode.Unauthorized;
+			return ServerFailureCode.ImcompetentAuth;
 		}
 	}
+	else if(Roles.userIsInRole(Meteor.userId(), [ServerRole.SysAdmin], ServerRole.SysGroup)) {
+		Roles.addUsersToRoles(args.user, args.roles, args.groups);
+		return ServerFailureCode.Ok;
+	}
 	else {
-		return ServerFailureCode.InvalidParam;
+		return ServerFailureCode.Unauthorized;
 	}
 }
 
@@ -116,24 +112,27 @@ function AddTestplan(args) {
 	return ServerFailureCode.Ok;
 }
 
-function Permit(method, role) {
-	return function(x) {
-		if(Roles.userIsInRole(Meteor.userId(), role, ServerRole.SysGroup)) {
-			return method(x);
-		}
-		else {
-			return ServerFailureCode.Unauthorized;
-		}
-	}
-}
-
 Meteor.methods({
 	/* system management */
-	'Sys.AssignUserToAdmin' : Permit(AssignUserToAdmin, [ServerRole.SysAdmin]),
-	'Sys.AddProject' : Permit(AddProject, [ServerRole.SysAdmin, ServerRole.Admin]),
-	'Sys.RemoveProject' : Permit(RemoveProject, [ServerRole.SysAdmin, ServerRole.Admin]),
+	'Sys.AssignUserToAdmin' : Permission(AssignUserToAdmin, 
+		[], 
+		[new RequireUser([ServerRole.SysAdmin])]),
+
+	'Sys.AddProject' : Permission(AddProject, 
+		[new RequireParam(['name'])], 
+		[new RequireUser([ServerRole.Admin])]),
+	
+	'Sys.RemoveProject' : Permission(RemoveProject, 
+		[new RequireParam(['name'])], 
+		[new RequireUser([ServerRole.Admin])]),
+	
 	/* projects management */
-	'Prj.AssignUser' : Permit(AssginUser, [ServerRole.SysAdmin, ServerRole.Admin]),
-	'Prj.AddTestplan' : Permit(AddTestplan, [ServerRole.SysAdmin, ServerRole.Admin, ServerRole.Maintener]),
+	'Prj.AssignUser' : Permission(AssginUser, 
+		[new RequireParam(['groups'])], 
+		[new RequireUser([ServerRole.Admin])]),
+	
+	'Prj.AddTestplan' : Permission(AddTestplan, 
+		[], 
+		[new RequireUser([ServerRole.Maintener])]),
 });
 
