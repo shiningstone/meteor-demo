@@ -3,6 +3,7 @@ import { Random } from 'meteor/random';
 import { assert } from 'meteor/practicalmeteor:chai';
 
 import { Projects } from './../imports/api/projects.js';
+import { Testplans } from './../imports/api/testplans.js';
 
 export const ServerFailureCode = {
 	Ok : 0,
@@ -58,8 +59,11 @@ function AssignUserToAdmin(args) {
 
 function AssginUser(args) {
 	if(args.groups) {
-		if(Roles.userIsInRole(Meteor.userId(), [ServerRole.SysAdmin, ServerRole.Admin], ServerRole.SysGroup)) {
-			if(Roles.userIsInRole(Meteor.userId(), [ServerRole.Admin], args.groups)) {
+		if(Roles.userIsInRole(Meteor.userId(), [ServerRole.SysAdmin], ServerRole.SysGroup)) {
+			Roles.addUsersToRoles(args.user, args.roles, args.groups);
+			return ServerFailureCode.Ok;
+		}
+		else if(Roles.userIsInRole(Meteor.userId(), [ServerRole.Admin], args.groups)) {
 				var curRoles = Roles.getRolesForUser(Meteor.userId(), ServerRole.SysGroup);
 
 				if(ServerRole.isPrior(curRoles, args.roles)) {
@@ -69,10 +73,6 @@ function AssginUser(args) {
 				else {
 					return ServerFailureCode.ImcompetentAuth;
 				}
-			}
-			else {
-				return ServerFailureCode.Unauthorized;
-			}
 		}
 		else {
 			return ServerFailureCode.Unauthorized;
@@ -83,36 +83,31 @@ function AssginUser(args) {
 	}
 }
 
-function AddUser(args) {
-	var curRoles = Roles.getRolesForUser(Meteor.userId());
+function AddProject(args) {
+	Projects.insert(args);
+	Roles.addUsersToRoles(Meteor.userId(), ['Admin'], args.name);
 
-	if(ServerRole.isPrior(curRoles, args.roles))
-	{
-		if(!ServerRole.isPrior(curRoles, [ServerRole.SysAdmin])) {
-			if(args.groups) {
-				Roles.addUsersToRoles(args.user, args.roles, args.groups);
-			}
-			else {
-				return ServerFailureCode.InvalidParam;
-			}
-		}
-		else {
-			Roles.addUsersToRoles(args.user, args.roles, args.groups);
-		}
+	return ServerFailureCode.Ok;
+}
 
+function RemoveProject(args) {
+	var prj = args.name;
+
+	var result = Projects.find({name : prj}).fetch();
+	if(result[0].creator===Meteor.userId()) {
+		Projects.remove({name : prj});
 		return ServerFailureCode.Ok;
 	}
 	else
 	{
-		return ServerFailureCode.ImcompetentAuth;
+		return ServerFailureCode.Unauthorized;
 	}
 }
 
-function AddProject(args) {
-	var prj = args.name;
+function AddTestplan(args) {
+	var testplan = args.name;
 
-	Projects.insert({name : prj});
-	Roles.addUsersToRoles(Meteor.userId(), ['Admin'], prj);
+	Testplans.insert({name : testplan});
 
 	return ServerFailureCode.Ok;
 }
@@ -132,7 +127,9 @@ Meteor.methods({
 	/* system management */
 	'Intf.AssignUserToAdmin' : Permit(AssignUserToAdmin, [ServerRole.SysAdmin]),
 	'Intf.AddProject' : Permit(AddProject, [ServerRole.SysAdmin, ServerRole.Admin]),
+	'Intf.RemoveProject' : Permit(RemoveProject, [ServerRole.SysAdmin, ServerRole.Admin]),
 	/* projects management */
 	'Project.AssignUser' : Permit(AssginUser, [ServerRole.SysAdmin, ServerRole.Admin]),
+	'Project.AddTestplan' : Permit(AddTestplan, [ServerRole.SysAdmin, ServerRole.Admin, ServerRole.Maintener]),
 });
 

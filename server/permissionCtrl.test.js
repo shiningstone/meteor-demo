@@ -5,6 +5,7 @@ import { Random } from 'meteor/random';
 import { assert } from 'meteor/practicalmeteor:chai';
 
 import { Projects } from './../imports/api/projects.js';
+import { Testplans } from './../imports/api/testplans.js';
 import { ServerFailureCode, ServerRole } from './interfaces.js'
 
 if (Meteor.isServer) {
@@ -63,6 +64,7 @@ if (Meteor.isServer) {
 				Meteor.roles.remove({});
 				Meteor.users.remove({});
 				Projects.remove({});
+				Testplans.remove({});
 				
 				Object.keys(ServerRole).map(function(role) {
 					Roles.createRole(role);
@@ -77,7 +79,18 @@ if (Meteor.isServer) {
 				Roles.addUsersToRoles(users.admin, [ServerRole.Admin], ServerRole.SysGroup);
 				fakeLogin(users.admin);
 			});
+			logDescribe('Interfaces AddTestPlan', () => {
+				logIt('admin is authorized to add a testplan', () => {
+					var testplan = {
+						name : 'test',
+					};
+					assert.equal(Meteor.call('Project.AddTestplan', testplan), ServerFailureCode.Ok);
 
+					var results = Testplans.find({}).fetch();
+					assert.equal(1, results.length);
+					assert.equal('test', results[0].name);
+				});
+			});
 			logDescribe('Interfaces AssignUser', () => {
 				logIt('admin is not authorized to add an user to other projects', () => {
 					var illegalUser = {
@@ -131,14 +144,39 @@ if (Meteor.isServer) {
 			});
 
 			logDescribe('Interfaces AddProject', () => {
-				logIt('non-admin is not authorized to AddProject', () => {
+				logIt('admin is not authorized to remove others\' project', () => {
+					var prj1 = {name: 'project1'};
+					Projects.insert(prj1);
+
+					assert.equal(Meteor.call('Intf.RemoveProject', prj1), ServerFailureCode.Unauthorized);
+				});
+				logIt('admin is authorized to remove specifed project', () => {
+					var prj1 = {name: 'project1', creator:Meteor.userId()};
+					var prj2 = {name: 'project2', creator:Meteor.userId()};
+					assert.equal(Meteor.call('Intf.AddProject', prj1), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Intf.AddProject', prj2), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Intf.RemoveProject', prj1), ServerFailureCode.Ok);
+
+					var results = Projects.find({}).fetch();
+					assert.equal(1, results.length);
+					assert.equal('project2', results[0].name);
+				});
+				logIt('admin is authorized to remove project', () => {
+					var prj1 = {name: 'project1', creator:Meteor.userId()};
+					assert.equal(Meteor.call('Intf.AddProject', prj1), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Intf.RemoveProject', prj1), ServerFailureCode.Ok);
+
+					var results = Projects.find({}).fetch();
+					assert.equal(0, results.length);
+				});
+				logIt('non-admin is not authorized to add project', () => {
 					var otherUser = createUser('otherUser');
 					fakeLogin(otherUser);
 
 					var prj = {name: 'project'};
 					assert.equal(Meteor.call('Intf.AddProject', prj), ServerFailureCode.Unauthorized);
 				});
-				logIt('admin is authorized to AddProject', () => {
+				logIt('admin is authorized to add project', () => {
 					var prj = {name: 'project'};
 					assert.equal(Meteor.call('Intf.AddProject', prj), ServerFailureCode.Ok);
 
@@ -146,7 +184,7 @@ if (Meteor.isServer) {
 					assert.equal(1, results.length);
 					assert.equal('project', results[0].name);
 				});
-				logIt('admin is unauthorized to AddProject', () => {
+				logIt('admin is unauthorized to add project', () => {
 					Roles.removeUsersFromRoles(users.admin, [ServerRole.Admin], ServerRole.SysGroup);
 					
 					var prj = {name: 'project'};
@@ -154,9 +192,6 @@ if (Meteor.isServer) {
 				});
 			});
 		});
-		/***********************************************************
-			System administrator
-		***********************************************************/
 		logDescribe('System administrator', () => {
 			logDescribe('Interfaces AssignUserToAdmin', () => {
 				beforeEach(() => {
