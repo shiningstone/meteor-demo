@@ -51,9 +51,9 @@ logDescribe('Permission', () => {
 
 			fakeLogin(users.admin);
 
-			assert.equal(testfunc({group:'testgroup'}), ServerFailureCode.Ok);
+			assert.equal(testfunc({groups:'testgroup'}), ServerFailureCode.Ok);
 			assert.equal(testfunc(), ServerFailureCode.InvalidParam);
-			assert.equal(testfunc({group:'badgroup'}), ServerFailureCode.Unauthorized);
+			assert.equal(testfunc({groups:'badgroup'}), ServerFailureCode.Unauthorized);
 		});
 		logIt('admin check', ()=> {
 			var limit = new RequireUser([ServerRole.Admin]);

@@ -28,8 +28,8 @@ RequireUser.prototype.check = function(x) {
 	var actRoles;
 
 	if(this.expGroup) {
-		if(x && x.hasOwnProperty('group')) {
-			actRoles = Roles.getRolesForUser(Meteor.userId(), x.group);
+		if(x && x.hasOwnProperty('groups')) {
+			actRoles = Roles.getRolesForUser(Meteor.userId(), x.groups);
 		}
 		else {
 			return ServerFailureCode.InvalidParam;

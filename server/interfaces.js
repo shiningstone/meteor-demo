@@ -63,23 +63,13 @@ function AssignUserToAdmin(args) {
 }
 
 function AssginUser(args) {
-	if(Roles.userIsInRole(Meteor.userId(), [ServerRole.Admin], args.groups)) {
-		var curRoles = Roles.getRolesForUser(Meteor.userId(), ServerRole.SysGroup);
-
-		if(ServerRole.isPrior(curRoles, args.roles)) {
-			Roles.addUsersToRoles(args.user, args.roles, args.groups);
-			return ServerFailureCode.Ok;
-		}
-		else {
-			return ServerFailureCode.ImcompetentAuth;
-		}
-	}
-	else if(Roles.userIsInRole(Meteor.userId(), [ServerRole.SysAdmin], ServerRole.SysGroup)) {
+	var actRoles = Roles.getRolesForUser(Meteor.userId(), args.groups);
+	if(ServerRole.isPrior(actRoles, args.roles)) {
 		Roles.addUsersToRoles(args.user, args.roles, args.groups);
 		return ServerFailureCode.Ok;
 	}
 	else {
-		return ServerFailureCode.Unauthorized;
+		return ServerFailureCode.ImcompetentAuth;
 	}
 }
 
@@ -129,7 +119,7 @@ Meteor.methods({
 	/* projects management */
 	'Prj.AssignUser' : Permission(AssginUser, 
 		[new RequireParam(['groups'])], 
-		[new RequireUser([ServerRole.Admin])]),
+		[new RequireUser([ServerRole.Admin], 'testgroup')]),
 	
 	'Prj.AddTestplan' : Permission(AddTestplan, 
 		[], 
