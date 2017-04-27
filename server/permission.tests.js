@@ -4,7 +4,7 @@ import { Random } from 'meteor/random';
 import { assert } from 'meteor/practicalmeteor:chai';
 
 import { ServerFailureCode, ServerRole } from './interfaces.js';
-import { Permission, ParamLimit } from './permission.js';
+import { Permission, RequireParam } from './permission.js';
 
 function fakeLogin(userId) {
 	Meteor.userId = function() {
@@ -22,19 +22,40 @@ var logIt = function(desc, func) {
 };
 
 logDescribe('Permission', () => {
-	logIt('deny function when parameter not satisfied', ()=> {
-		var limit = new ParamLimit();
-		var testfunc = Permission(function() {return true;}, [limit]);
+	logDescribe('user role check', () => {
+/*		var limit = new RequireUser([ServerRole.SysAdmin]);
+		var testfunc = Permission(function() {return ServerFailureCode.Ok;}, [limit]);
 		assert.equal(testfunc(), ServerFailureCode.InvalidParam);
-	})
-	logIt('call function directly when no limitation imposed', ()=> {
-		var testfunc = Permission(function() {return true;});
-		assert.equal(testfunc(), true);
+*/	});
+	logDescribe('parameter check', () => {
+		logIt('deny function when multiple parameters not satisfied', ()=> {
+			var limit = new RequireParam(['name', 'project']);
+			var testfunc = Permission(function() {return ServerFailureCode.Ok;}, [limit]);
 
-		testfunc = Permission(function() {return false});
-		assert.equal(testfunc(), false);
+			assert.equal(testfunc({name: 'test1'}), ServerFailureCode.InvalidParam);
+			assert.equal(testfunc({name: 'test1', project:'test2'}), ServerFailureCode.Ok);
+		})
+		logIt('deny function when parameter not satisfied', ()=> {
+			var limit = new RequireParam(['name']);
+			var testfunc = Permission(function() {return ServerFailureCode.Ok;}, [limit]);
+			
+			assert.equal(testfunc(), ServerFailureCode.InvalidParam);
+			assert.equal(testfunc({name: 'test1'}), ServerFailureCode.Ok);
+			assert.equal(testfunc({name: 'test2'}), ServerFailureCode.Ok);
 
-		testfunc = Permission(function(x) {return x});
-		assert.equal(testfunc(1), 1);
-	})
+			limit = new RequireParam(['project']);
+			testfunc = Permission(function() {return ServerFailureCode.Ok;}, [limit]);
+			assert.equal(testfunc({project: 'test1'}), ServerFailureCode.Ok);
+		})
+		logIt('call function directly when no limitation imposed', ()=> {
+			var testfunc = Permission(function() {return true;});
+			assert.equal(testfunc(), true);
+
+			testfunc = Permission(function() {return false});
+			assert.equal(testfunc(), false);
+
+			testfunc = Permission(function(x) {return x});
+			assert.equal(testfunc(1), 1);
+		})
+	});
 });
