@@ -8,11 +8,15 @@ export function fakeLogin(userId) {
 }
 
 export const logDescribe = function(desc, func) {
-	console.log(desc);
-	describe(desc, func);
+	describe(desc, function() {
+		console.log('====================== ' + desc + ' ======================');
+		func();
+	});
 };
 
 export const logIt = function(desc, func) {
-	console.log('\t' + desc);
-	it(desc, func);
+	it(desc, function() {
+		console.log('\t' + '----' + desc + '----------------------');
+		func();
+	});
 };

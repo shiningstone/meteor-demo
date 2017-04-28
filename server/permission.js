@@ -1,6 +1,6 @@
 
 import { ErrCode } from './interfaces.js';
-import { ServerRole } from './serverRole.js';
+import { UserRoles } from './userRoles.js';
 
 export function RequireParam(paramDescs) {
 	this.paramDescs = paramDescs;
@@ -37,10 +37,10 @@ RequireUser.prototype.check = function(x) {
 		}
 	}
 	else {
-		actRoles = Roles.getRolesForUser(Meteor.userId(), ServerRole.SysGroup);
+		actRoles = Roles.getRolesForUser(Meteor.userId(), UserRoles.SYS_GROUP);
 	}
 
-	if(actRoles.length>0 && ServerRole.isPrior(ServerRole.pack(actRoles), this.expRoles)) {
+	if(actRoles.length>0 && UserRoles.isPrior(actRoles, this.expRoles)) {
 		return ErrCode.Ok;
 	}
 	else {

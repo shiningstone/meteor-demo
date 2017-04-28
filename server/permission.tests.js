@@ -3,8 +3,7 @@ import { Meteor } from 'meteor/meteor';
 import { Random } from 'meteor/random';
 import { assert } from 'meteor/practicalmeteor:chai';
 
-
-import { ServerRole } from './serverRole.js';
+import { UserRoles } from './userRoles.js';
 import { ErrCode } from './interfaces.js';
 import { Permission, RequireParam, RequireUser } from './permission.js';
 
@@ -20,7 +19,7 @@ logDescribe('Permission', () => {
 			Meteor.roles.remove({});
 			Meteor.users.remove({});
 			
-			Object.keys(ServerRole).map(function(role) {
+			Object.keys(UserRoles).map(function(role) {
 				Roles.createRole(role);
 			});
 			
@@ -29,13 +28,13 @@ logDescribe('Permission', () => {
 				'admin': createUser('admin'),
 			};
 
-			Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin.name], ServerRole.SysGroup);
-			Roles.addUsersToRoles(users.admin, [ServerRole.Admin.name], ServerRole.SysGroup);
+			Roles.addUsersToRoles(users.sysAdmin, [UserRoles.SYS_ADMIN], UserRoles.SYS_GROUP);
+			Roles.addUsersToRoles(users.admin, [UserRoles.ADMIN], UserRoles.SYS_GROUP);
 		});
 
 		logIt('admin check with group', ()=> {
-			Roles.addUsersToRoles(users.admin, [ServerRole.Admin.name], 'testgroup');
-			var limit = new RequireUser([ServerRole.Admin], 'RequireGroup');
+			Roles.addUsersToRoles(users.admin, [UserRoles.ADMIN], 'testgroup');
+			var limit = new RequireUser([UserRoles.ADMIN], 'RequireGroup');
 			var testfunc = Permission(function() {return ErrCode.Ok;}, [], [limit]);
 
 			fakeLogin(users.admin);
@@ -45,7 +44,7 @@ logDescribe('Permission', () => {
 			assert.equal(testfunc({groups:'badgroup'}), ErrCode.Unauthorized);
 		});
 		logIt('admin check', ()=> {
-			var limit = new RequireUser([ServerRole.Admin]);
+			var limit = new RequireUser([UserRoles.ADMIN]);
 			var testfunc = Permission(function() {return ErrCode.Ok;}, [], [limit]);
 
 			fakeLogin(users.sysAdmin);
@@ -55,13 +54,12 @@ logDescribe('Permission', () => {
 			assert.equal(testfunc(), ErrCode.Ok);
 		});
 		logIt('sysadmin check', ()=> {
-			var limit = new RequireUser([ServerRole.SysAdmin]);
+			var limit = new RequireUser([UserRoles.SYS_ADMIN]);
 			var testfunc = Permission(function() {return ErrCode.Ok;}, [], [limit]);
 
 			fakeLogin(users.sysAdmin);
 			assert.equal(testfunc(), ErrCode.Ok);
 
-			console.log('sysadmin check------------------------------');
 			fakeLogin(users.admin);
 			assert.equal(testfunc(), ErrCode.Unauthorized);
 		});
