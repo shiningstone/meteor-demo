@@ -41,15 +41,15 @@ Meteor.methods({
 
 
 function AssignUserToAdmin(args) {
-	Roles.addUsersToRoles(args.user, [ServerRole.Admin], ServerRole.SysGroup);
+	Roles.addUsersToRoles(args.user, [ServerRole.Admin.name], ServerRole.SysGroup);
 	return ErrCode.Ok;
 }
 
 function AssginUser(args) {
 	var actRoles = Roles.getRolesForUser(Meteor.userId(), args.groups);
 
-	if(ServerRole.isPrior(actRoles, args.roles)) {
-		Roles.addUsersToRoles(args.user, args.roles, args.groups);
+	if(ServerRole.isPrior(ServerRole.pack(actRoles), args.roles)) {
+		Roles.addUsersToRoles(args.user, ServerRole.unpack(args.roles), args.groups);
 		return ErrCode.Ok;
 	}
 	else {

@@ -1,42 +1,64 @@
 
 export const ServerRole = {
 	/*system roles*/
-	SysAdmin : 'SysAdmin',
-	Admin : 'Admin',
+	SysAdmin : { name:'SysAdmin', level:0 },
+	Admin : { name:'Admin', level:1 },
 	/*project roles*/
-	Creator : 'Creator',
-	Maintener : 'Maintener',
-	Tester : 'Tester',
+	Creator : { name:'Creator', level:2 },
+	Maintener : { name:'Maintener', level:3 },
+	Tester : { name:'Tester', level:4 },
 };
 
 ServerRole.SysGroup = 'SysGroup';
 
-ServerRole.level = function(role) {
-	switch(role) {
-		case 'SysAdmin': return 0;
-		case 'Admin': return 1;
-		case 'Maintener': return 2;
-		case 'Tester': return 3;
-		default: return 4;
+/************************************************************************************************** 
+	Note : 
+		The following 2 interfaces are adaptors to package alaning:Roles, please make sure
+		the roles are 'packed' before entering ServerRole module, and 'unpacked' before entering
+		alaning:Roles
+**************************************************************************************************/
+ServerRole.pack = function(roleName) {
+	for(var n in ServerRole) {
+		if(roleName==n) {
+			return ServerRole[n];
+		}
 	}
-}
+};
 
-ServerRole.compare = function(x, y) {
-	return (ServerRole.level(x)>ServerRole.level(y)) ? 1 : -1;
+ServerRole.unpack = function(roles) {
+	var roleNames = [];
+	for(var i=0; i<roles.length; i++) {
+		roleNames.push(roles[i].name);
+	}
+	return roleNames;
+};
+
+ServerRole.compare = function(role_x, role_y) {
+	return (role_x.level>role_y.level) ? 1 : -1;
 }
 
 ServerRole.high = function(roles) {
-	roles.sort(ServerRole.compare);
-	return roles[0];
+	if(roles instanceof Array) {
+		roles.sort(ServerRole.compare);
+		return roles[0];
+	}
+	else {
+		return roles;
+	}
 };
 
 ServerRole.low = function(roles) {
-	roles.sort(ServerRole.compare);
-	return roles[roles.length - 1];
+	if(roles instanceof Array) {
+		roles.sort(ServerRole.compare);
+		return roles[roles.length - 1];
+	}
+	else {
+		return roles;
+	}
 };
 
-ServerRole.isPrior = function(cur, expect) {
-	return (ServerRole.compare(ServerRole.low(cur), ServerRole.high(expect))==-1);
+ServerRole.isPrior = function(curs, expects) {
+	return (ServerRole.compare(ServerRole.low(curs), ServerRole.high(expects))==-1);
 };
 
 ServerRole.expand = function(roles) {

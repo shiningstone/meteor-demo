@@ -36,8 +36,8 @@ if (Meteor.isServer) {
 					'admin': createUser('admin'),
 				};
 
-				Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin], ServerRole.SysGroup);
-				Roles.addUsersToRoles(users.admin, [ServerRole.Admin], ServerRole.SysGroup);
+				Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin.name], ServerRole.SysGroup);
+				Roles.addUsersToRoles(users.admin, [ServerRole.Admin.name], ServerRole.SysGroup);
 				fakeLogin(users.admin);
 			});
 			logDescribe('Interfaces AddTestPlan', () => {
@@ -62,6 +62,8 @@ if (Meteor.isServer) {
 
 					var prj = {name: 'project'};
 					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
+
+					console.log('admin is not authorized to add an user to other projects');
 					assert.equal(Meteor.call('Prj.AssignUser', illegalUser), ErrCode.Unauthorized);
 				});
 				logIt('admin is not authorized to add an user to its own project with improper role', () => {
@@ -71,6 +73,7 @@ if (Meteor.isServer) {
 						groups : 'project',
 					};
 
+					console.log('admin is not authorized to add an user to its own project with improper role');
 					var prj = {name: 'project'};
 					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
 					assert.equal(Meteor.call('Prj.AssignUser', illegalUser), ErrCode.ImcompetentAuth);
@@ -85,8 +88,8 @@ if (Meteor.isServer) {
 					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
 					assert.equal(Meteor.call('Prj.AssignUser', legalUser2), ErrCode.InvalidParam);
 
-					assert.equal(Roles.userIsInRole(legalUser2.user, legalUser2.roles), false);
-					assert.equal(Roles.userIsInRole(legalUser2.user, legalUser2.roles, 'project'), false);
+					assert.equal(Roles.userIsInRole(legalUser2.user, 'Maintener'), false);
+					assert.equal(Roles.userIsInRole(legalUser2.user, 'Maintener', 'project'), false);
 				});
 				logIt('admin is authorized to add an user to its own project with proper role', () => {
 					var legalUser1 = {
@@ -99,8 +102,8 @@ if (Meteor.isServer) {
 					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
 					assert.equal(Meteor.call('Prj.AssignUser', legalUser1), ErrCode.Ok);
 
-					assert.equal(Roles.userIsInRole(legalUser1.user, legalUser1.roles), false);
-					assert.equal(Roles.userIsInRole(legalUser1.user, legalUser1.roles, 'project'), true);
+					assert.equal(Roles.userIsInRole(legalUser1.user, 'Admin'), false);
+					assert.equal(Roles.userIsInRole(legalUser1.user, 'Admin', 'project'), true);
 				});
 			});
 
@@ -146,7 +149,7 @@ if (Meteor.isServer) {
 					assert.equal('project', results[0].name);
 				});
 				logIt('admin is unauthorized to add project', () => {
-					Roles.removeUsersFromRoles(users.admin, [ServerRole.Admin], ServerRole.SysGroup);
+					Roles.removeUsersFromRoles(users.admin, [ServerRole.Admin.name], ServerRole.SysGroup);
 					
 					var prj = {name: 'project'};
 					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Unauthorized);
@@ -174,15 +177,15 @@ if (Meteor.isServer) {
 					assert.equal(Meteor.call('Sys.AssignUserToAdmin', newuser), ErrCode.Unauthorized);
 				});
 				logIt('sysAdmin is authorized to AddUser', () => {
-					Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin], ServerRole.SysGroup);
+					Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin.name], ServerRole.SysGroup);
 					fakeLogin(users.sysAdmin);
 
 					var newuser = { user: users.sysAdmin, roles: [ServerRole.Admin], groups: ServerRole.SysGroup};
 					assert.equal(Meteor.call('Sys.AssignUserToAdmin', newuser), ErrCode.Ok);
 				});
 				logIt('sysAdmin is unauthorized to AddUser', () => {
-					Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin], ServerRole.SysGroup);
-					Roles.removeUsersFromRoles(users.sysAdmin, [ServerRole.SysAdmin], ServerRole.SysGroup);
+					Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin.name], ServerRole.SysGroup);
+					Roles.removeUsersFromRoles(users.sysAdmin, [ServerRole.SysAdmin.name], ServerRole.SysGroup);
 					fakeLogin(users.sysAdmin);
 
 					var newuser = { user: users.sysAdmin, roles: [ServerRole.Admin], groups: ServerRole.SysGroup};

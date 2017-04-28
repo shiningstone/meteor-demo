@@ -29,12 +29,12 @@ logDescribe('Permission', () => {
 				'admin': createUser('admin'),
 			};
 
-			Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin], ServerRole.SysGroup);
-			Roles.addUsersToRoles(users.admin, [ServerRole.Admin], ServerRole.SysGroup);
+			Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin.name], ServerRole.SysGroup);
+			Roles.addUsersToRoles(users.admin, [ServerRole.Admin.name], ServerRole.SysGroup);
 		});
 
 		logIt('admin check with group', ()=> {
-			Roles.addUsersToRoles(users.admin, [ServerRole.Admin], 'testgroup');
+			Roles.addUsersToRoles(users.admin, [ServerRole.Admin.name], 'testgroup');
 			var limit = new RequireUser([ServerRole.Admin], 'RequireGroup');
 			var testfunc = Permission(function() {return ErrCode.Ok;}, [], [limit]);
 
@@ -61,6 +61,7 @@ logDescribe('Permission', () => {
 			fakeLogin(users.sysAdmin);
 			assert.equal(testfunc(), ErrCode.Ok);
 
+			console.log('sysadmin check------------------------------');
 			fakeLogin(users.admin);
 			assert.equal(testfunc(), ErrCode.Unauthorized);
 		});

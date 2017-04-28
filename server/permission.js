@@ -40,7 +40,7 @@ RequireUser.prototype.check = function(x) {
 		actRoles = Roles.getRolesForUser(Meteor.userId(), ServerRole.SysGroup);
 	}
 
-	if(ServerRole.isPrior(actRoles, this.expRoles)) {
+	if(actRoles.length>0 && ServerRole.isPrior(ServerRole.pack(actRoles), this.expRoles)) {
 		return ErrCode.Ok;
 	}
 	else {

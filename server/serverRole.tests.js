@@ -31,6 +31,7 @@ if (Meteor.isServer) {
 			assert.equal(ServerRole.isPrior([ServerRole.SysAdmin], [ServerRole.Admin]), true);
 			assert.equal(ServerRole.isPrior([ServerRole.SysAdmin], [ServerRole.SysAdmin]), true);
 			assert.equal(ServerRole.isPrior([ServerRole.Admin], [ServerRole.SysAdmin]), false);
+			assert.equal(ServerRole.isPrior(ServerRole.Admin, [ServerRole.SysAdmin]), false);
 		});
 	});
 }
