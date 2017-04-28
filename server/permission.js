@@ -1,5 +1,6 @@
 
-import { ServerFailureCode, ServerRole } from './interfaces.js';
+import { ErrCode } from './interfaces.js';
+import { ServerRole } from './serverRole.js';
 
 export function RequireParam(paramDescs) {
 	this.paramDescs = paramDescs;
@@ -7,32 +8,32 @@ export function RequireParam(paramDescs) {
 
 RequireParam.prototype.check = function(x) {
 	if(!x) {
-		return ServerFailureCode.InvalidParam;
+		return ErrCode.InvalidParam;
 	}
 
 	for(var i=0; i<this.paramDescs.length; i++) {
 		if(!x.hasOwnProperty(this.paramDescs[i])) {
-			return ServerFailureCode.InvalidParam;
+			return ErrCode.InvalidParam;
 		}
 	}
 
-	return ServerFailureCode.Ok;
+	return ErrCode.Ok;
 };
 
-export function RequireUser(roles, group) {
+export function RequireUser(roles, isSpecGroup) {
 	this.expRoles = roles;
-	this.expGroup = group;
+	this.isRequireGroup = isSpecGroup;
 }
 
 RequireUser.prototype.check = function(x) {
 	var actRoles;
 
-	if(this.expGroup) {
+	if(this.isRequireGroup) {
 		if(x && x.hasOwnProperty('groups')) {
 			actRoles = Roles.getRolesForUser(Meteor.userId(), x.groups);
 		}
 		else {
-			return ServerFailureCode.InvalidParam;
+			return ErrCode.InvalidParam;
 		}
 	}
 	else {
@@ -40,10 +41,10 @@ RequireUser.prototype.check = function(x) {
 	}
 
 	if(ServerRole.isPrior(actRoles, this.expRoles)) {
-		return ServerFailureCode.Ok;
+		return ErrCode.Ok;
 	}
 	else {
-		return ServerFailureCode.Unauthorized;
+		return ErrCode.Unauthorized;
 	}
 };
 
@@ -53,7 +54,7 @@ export function Permission(method, paramLimits, userLimits) {
 
 		if(paramLimits) {
 			for(var i = 0; i<paramLimits.length; i++) {
-				if((result = paramLimits[i].check(x))!=ServerFailureCode.Ok) {
+				if((result = paramLimits[i].check(x))!=ErrCode.Ok) {
 					return result;
 				}
 			}
@@ -61,7 +62,7 @@ export function Permission(method, paramLimits, userLimits) {
 
 		if(userLimits) {
 			for(var i = 0; i<userLimits.length; i++) {
-				if((result = userLimits[i].check(x))==ServerFailureCode.Ok) {
+				if((result = userLimits[i].check(x))==ErrCode.Ok) {
 					return method(x);
 				}
 			}

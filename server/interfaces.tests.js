@@ -6,54 +6,15 @@ import { assert } from 'meteor/practicalmeteor:chai';
 
 import { Projects } from './../imports/api/projects.js';
 import { Testplans } from './../imports/api/testplans.js';
-import { ServerFailureCode, ServerRole } from './interfaces.js'
+import { ServerRole } from './serverRole.js'
+import { ErrCode } from './interfaces.js'
+
+import { fakeLogin, logDescribe, logIt } from './utils.tests.js';
 
 if (Meteor.isServer) {
-	function fakeLogin(userId) {
-		Meteor.userId = function() {
-			return userId;
-		};
-	}
-	
-	var logDescribe = function(desc, func) {
-		console.log(desc);
-		describe(desc, func);
-	};
-	var logIt = function(desc, func) {
-		console.log('\t' + desc);
-		it(desc, func);
-	};
 	/*********************************** 
 		test cases
 	***********************************/
-	logDescribe('ServerRole', () => {
-		logIt('ServerRole choose high', () => {
-			var a = [ServerRole.SysAdmin, ServerRole.Admin];
-			assert.equal(ServerRole.high(a), ServerRole.SysAdmin);
-
-			a = [ServerRole.Admin, ServerRole.SysAdmin];
-			assert.equal(ServerRole.high(a), ServerRole.SysAdmin);
-
-			a = [ServerRole.Admin, ServerRole.Maintener];
-			assert.equal(ServerRole.high(a), ServerRole.Admin);
-		});
-		logIt('ServerRole choose low', () => {
-			var a = [ServerRole.SysAdmin, ServerRole.Admin];
-			assert.equal(ServerRole.low(a), ServerRole.Admin);
-
-			a = [ServerRole.Admin, ServerRole.SysAdmin];
-			assert.equal(ServerRole.low(a), ServerRole.Admin);
-
-			a = [ServerRole.Admin, ServerRole.Maintener];
-			assert.equal(ServerRole.low(a), ServerRole.Maintener);
-		});
-		logIt('ServerRoles compare', () => {
-			assert.equal(ServerRole.isPrior([ServerRole.SysAdmin], [ServerRole.Admin]), true);
-			assert.equal(ServerRole.isPrior([ServerRole.SysAdmin], [ServerRole.SysAdmin]), true);
-			assert.equal(ServerRole.isPrior([ServerRole.Admin], [ServerRole.SysAdmin]), false);
-		});
-	});
-
 	logDescribe('PermissionCtrl', () => {
 		function createUser (name) {
 			return Accounts.createUser({'username': name});
@@ -84,7 +45,7 @@ if (Meteor.isServer) {
 					var testplan = {
 						name : 'test',
 					};
-					assert.equal(Meteor.call('Prj.AddTestplan', testplan), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Prj.AddTestplan', testplan), ErrCode.Ok);
 
 					var results = Testplans.find({}).fetch();
 					assert.equal(1, results.length);
@@ -100,8 +61,8 @@ if (Meteor.isServer) {
 					};
 
 					var prj = {name: 'project'};
-					assert.equal(Meteor.call('Sys.AddProject', prj), ServerFailureCode.Ok);
-					assert.equal(Meteor.call('Prj.AssignUser', illegalUser), ServerFailureCode.Unauthorized);
+					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
+					assert.equal(Meteor.call('Prj.AssignUser', illegalUser), ErrCode.Unauthorized);
 				});
 				logIt('admin is not authorized to add an user to its own project with improper role', () => {
 					var illegalUser = {
@@ -111,8 +72,8 @@ if (Meteor.isServer) {
 					};
 
 					var prj = {name: 'project'};
-					assert.equal(Meteor.call('Sys.AddProject', prj), ServerFailureCode.Ok);
-					assert.equal(Meteor.call('Prj.AssignUser', illegalUser), ServerFailureCode.ImcompetentAuth);
+					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
+					assert.equal(Meteor.call('Prj.AssignUser', illegalUser), ErrCode.ImcompetentAuth);
 				});
 				logIt('admin is not authorized to add an user to its own project without specifing a group', () => {
 					var legalUser2 = {
@@ -121,8 +82,8 @@ if (Meteor.isServer) {
 					};
 
 					var prj = {name: 'project'};
-					assert.equal(Meteor.call('Sys.AddProject', prj), ServerFailureCode.Ok);
-					assert.equal(Meteor.call('Prj.AssignUser', legalUser2), ServerFailureCode.InvalidParam);
+					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
+					assert.equal(Meteor.call('Prj.AssignUser', legalUser2), ErrCode.InvalidParam);
 
 					assert.equal(Roles.userIsInRole(legalUser2.user, legalUser2.roles), false);
 					assert.equal(Roles.userIsInRole(legalUser2.user, legalUser2.roles, 'project'), false);
@@ -135,8 +96,8 @@ if (Meteor.isServer) {
 					};
 
 					var prj = {name: 'project'};
-					assert.equal(Meteor.call('Sys.AddProject', prj), ServerFailureCode.Ok);
-					assert.equal(Meteor.call('Prj.AssignUser', legalUser1), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
+					assert.equal(Meteor.call('Prj.AssignUser', legalUser1), ErrCode.Ok);
 
 					assert.equal(Roles.userIsInRole(legalUser1.user, legalUser1.roles), false);
 					assert.equal(Roles.userIsInRole(legalUser1.user, legalUser1.roles, 'project'), true);
@@ -148,14 +109,14 @@ if (Meteor.isServer) {
 					var prj1 = {name: 'project1'};
 					Projects.insert(prj1);
 
-					assert.equal(Meteor.call('Sys.RemoveProject', prj1), ServerFailureCode.Unauthorized);
+					assert.equal(Meteor.call('Sys.RemoveProject', prj1), ErrCode.Unauthorized);
 				});
 				logIt('admin is authorized to remove specifed project', () => {
 					var prj1 = {name: 'project1', creator:Meteor.userId()};
 					var prj2 = {name: 'project2', creator:Meteor.userId()};
-					assert.equal(Meteor.call('Sys.AddProject', prj1), ServerFailureCode.Ok);
-					assert.equal(Meteor.call('Sys.AddProject', prj2), ServerFailureCode.Ok);
-					assert.equal(Meteor.call('Sys.RemoveProject', prj1), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Sys.AddProject', prj1), ErrCode.Ok);
+					assert.equal(Meteor.call('Sys.AddProject', prj2), ErrCode.Ok);
+					assert.equal(Meteor.call('Sys.RemoveProject', prj1), ErrCode.Ok);
 
 					var results = Projects.find({}).fetch();
 					assert.equal(1, results.length);
@@ -163,8 +124,8 @@ if (Meteor.isServer) {
 				});
 				logIt('admin is authorized to remove project', () => {
 					var prj1 = {name: 'project1', creator:Meteor.userId()};
-					assert.equal(Meteor.call('Sys.AddProject', prj1), ServerFailureCode.Ok);
-					assert.equal(Meteor.call('Sys.RemoveProject', prj1), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Sys.AddProject', prj1), ErrCode.Ok);
+					assert.equal(Meteor.call('Sys.RemoveProject', prj1), ErrCode.Ok);
 
 					var results = Projects.find({}).fetch();
 					assert.equal(0, results.length);
@@ -174,11 +135,11 @@ if (Meteor.isServer) {
 					fakeLogin(otherUser);
 
 					var prj = {name: 'project'};
-					assert.equal(Meteor.call('Sys.AddProject', prj), ServerFailureCode.Unauthorized);
+					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Unauthorized);
 				});
 				logIt('admin is authorized to add project', () => {
 					var prj = {name: 'project'};
-					assert.equal(Meteor.call('Sys.AddProject', prj), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Ok);
 
 					var results = Projects.find({}).fetch();
 					assert.equal(1, results.length);
@@ -188,7 +149,7 @@ if (Meteor.isServer) {
 					Roles.removeUsersFromRoles(users.admin, [ServerRole.Admin], ServerRole.SysGroup);
 					
 					var prj = {name: 'project'};
-					assert.equal(Meteor.call('Sys.AddProject', prj), ServerFailureCode.Unauthorized);
+					assert.equal(Meteor.call('Sys.AddProject', prj), ErrCode.Unauthorized);
 				});
 			});
 		});
@@ -210,14 +171,14 @@ if (Meteor.isServer) {
 
 				logIt('non-sysAdmin is not authorized to AddUser', () => {
 					var newuser = { user: users.sysAdmin, roles: [ServerRole.Admin], groups: ServerRole.SysGroup};
-					assert.equal(Meteor.call('Sys.AssignUserToAdmin', newuser), ServerFailureCode.Unauthorized);
+					assert.equal(Meteor.call('Sys.AssignUserToAdmin', newuser), ErrCode.Unauthorized);
 				});
 				logIt('sysAdmin is authorized to AddUser', () => {
 					Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin], ServerRole.SysGroup);
 					fakeLogin(users.sysAdmin);
 
 					var newuser = { user: users.sysAdmin, roles: [ServerRole.Admin], groups: ServerRole.SysGroup};
-					assert.equal(Meteor.call('Sys.AssignUserToAdmin', newuser), ServerFailureCode.Ok);
+					assert.equal(Meteor.call('Sys.AssignUserToAdmin', newuser), ErrCode.Ok);
 				});
 				logIt('sysAdmin is unauthorized to AddUser', () => {
 					Roles.addUsersToRoles(users.sysAdmin, [ServerRole.SysAdmin], ServerRole.SysGroup);
@@ -225,7 +186,7 @@ if (Meteor.isServer) {
 					fakeLogin(users.sysAdmin);
 
 					var newuser = { user: users.sysAdmin, roles: [ServerRole.Admin], groups: ServerRole.SysGroup};
-					assert.equal(Meteor.call('Sys.AssignUserToAdmin', newuser), ServerFailureCode.Unauthorized);
+					assert.equal(Meteor.call('Sys.AssignUserToAdmin', newuser), ErrCode.Unauthorized);
 				});
 			});
 		});
